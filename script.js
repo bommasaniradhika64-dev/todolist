@@ -4,7 +4,7 @@ const addBtn = document.getElementById("addBtn");
 const taskList = document.getElementById("taskList");
 const progressBar = document.getElementById("progressBar");
 
-// --- Default tasks for first-time visitors ---
+// --- Default tasks ---
 const defaultTasks = [
     "Read book",
     "Complete coding practice",
@@ -12,16 +12,8 @@ const defaultTasks = [
 ];
 
 // --- Load tasks from localStorage or use defaults ---
-let tasks = JSON.parse(localStorage.getItem("tasks"));
-if (!tasks || tasks.length === 0) {
-    const defaultTasks = [
-        "Read book",
-        "Complete coding practice",
-        "Google meet"
-    ];
-    tasks = defaultTasks;
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-}
+let tasks = JSON.parse(localStorage.getItem("tasks")) || defaultTasks;
+localStorage.setItem("tasks", JSON.stringify(tasks));
 
 // --- Render tasks in UI ---
 function renderTasks() {
@@ -33,6 +25,7 @@ function renderTasks() {
         // Task text span
         const span = document.createElement("span");
         span.textContent = task;
+        span.style.cursor = "pointer";
         li.appendChild(span);
 
         // Click text to mark complete
@@ -41,24 +34,29 @@ function renderTasks() {
             updateProgress();
         });
 
-        // Edit button
-        const editBtn = document.createElement("button");
-        editBtn.textContent = "Edit";
-        editBtn.style.marginLeft = "10px";
-        editBtn.style.cursor = "pointer";
-        editBtn.addEventListener("click", () => {
-            const newTask = prompt("Edit your task:", task);
-            if (newTask !== null && newTask.trim() !== "") {
-                tasks[index] = newTask.trim();
-                updateTasks();
-            }
+        // Inline editing on double-click
+        span.addEventListener("dblclick", () => {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = tasks[index];
+            input.style.width = "60%";
+            input.style.marginRight = "5px";
+
+            li.insertBefore(input, span);
+            li.removeChild(span);
+            input.focus();
+
+            // Save on Enter or blur
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") saveEdit(input, index, li);
+            });
+            input.addEventListener("blur", () => saveEdit(input, index, li));
         });
-        li.appendChild(editBtn);
 
         // Delete button
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "Delete";
-        deleteBtn.style.marginLeft = "5px";
+        deleteBtn.style.marginLeft = "10px";
         deleteBtn.style.cursor = "pointer";
         deleteBtn.addEventListener("click", () => {
             tasks.splice(index, 1);
@@ -69,7 +67,20 @@ function renderTasks() {
         taskList.appendChild(li);
     });
 
-    updateProgress(); // update progress bar after rendering
+    updateProgress();
+}
+
+// --- Save inline edit ---
+function saveEdit(input, index, li) {
+    const newValue = input.value.trim();
+    if (newValue !== "") {
+        tasks[index] = newValue;
+        updateTasks();
+    } else {
+        // If empty, remove the task
+        tasks.splice(index, 1);
+        updateTasks();
+    }
 }
 
 // --- Add new task ---
