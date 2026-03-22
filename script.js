@@ -1,92 +1,95 @@
-const addBtn = document.getElementById('addBtn');
-const taskInput = document.getElementById('taskInput');
-const taskList = document.getElementById('taskList');
-const progressBar = document.getElementById('progressBar');
+// --- Select DOM elements ---
+const taskInput = document.getElementById("taskInput");
+const addBtn = document.getElementById("addBtn");
+const taskList = document.getElementById("taskList");
+const progressBar = document.getElementById("progressBar");
 
-// Load tasks from localStorage
-let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-tasks.forEach(task => addTaskToDOM(task.text, task.completed));
-updateProgress();
+// --- Default tasks for first-time visitors ---
+const defaultTasks = [
+    "Buy groceries",
+    "Complete homework",
+    "Call a friend"
+];
 
-// Add new task
-addBtn.addEventListener('click', () => {
+// --- Load tasks from localStorage or use defaults ---
+let tasks = JSON.parse(localStorage.getItem("tasks"));
+if (!tasks || tasks.length === 0) {
+    tasks = defaultTasks;
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+// --- Render tasks in UI ---
+function renderTasks() {
+    taskList.innerHTML = ""; // clear list
+    tasks.forEach((task, index) => {
+        const li = document.createElement("li");
+        li.className = "task-item";
+
+        // Task text span
+        const span = document.createElement("span");
+        span.textContent = task;
+        li.appendChild(span);
+
+        // Click text to mark complete
+        span.addEventListener("click", () => {
+            li.classList.toggle("completed");
+            updateProgress();
+        });
+
+        // Edit button
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.style.marginLeft = "10px";
+        editBtn.style.cursor = "pointer";
+        editBtn.addEventListener("click", () => {
+            const newTask = prompt("Edit your task:", task);
+            if (newTask !== null && newTask.trim() !== "") {
+                tasks[index] = newTask.trim();
+                updateTasks();
+            }
+        });
+        li.appendChild(editBtn);
+
+        // Delete button
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.style.marginLeft = "5px";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.addEventListener("click", () => {
+            tasks.splice(index, 1);
+            updateTasks();
+        });
+        li.appendChild(deleteBtn);
+
+        taskList.appendChild(li);
+    });
+
+    updateProgress(); // update progress bar after rendering
+}
+
+// --- Add new task ---
+addBtn.addEventListener("click", () => {
     const taskText = taskInput.value.trim();
-    if (taskText === '') return;
-
-    const task = { text: taskText, completed: false };
-    tasks.push(task);
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-
-    addTaskToDOM(taskText, false);
-    taskInput.value = '';
-    updateProgress();
+    if (taskText !== "") {
+        tasks.push(taskText);
+        updateTasks();
+        taskInput.value = "";
+    }
 });
 
-function addTaskToDOM(text, completed) {
-    const li = document.createElement('li');
-    li.innerHTML = `
-        ${text} 
-        <div>
-            <button class="edit-btn">Edit</button>
-            <button onclick="deleteTask(this)">Delete</button>
-        </div>
-    `;
-
-    if(completed) li.classList.add('completed');
-
-    // Toggle completed status when clicking on task text
-    li.addEventListener('click', (e) => {
-        if(e.target.tagName !== 'BUTTON'){
-            li.classList.toggle('completed');
-            updateTaskStatus(text, li.classList.contains('completed'));
-            updateProgress();
-        }
-    });
-
-    // Edit task
-    const editBtn = li.querySelector('.edit-btn');
-    editBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // prevent toggling completed
-        const newText = prompt('Edit task:', text);
-        if(newText && newText.trim() !== '') {
-            updateTaskText(text, newText.trim());
-            li.childNodes[0].textContent = newText + ' ';
-            text = newText.trim(); // update reference for toggle
-        }
-    });
-
-    taskList.appendChild(li);
+// --- Update tasks in localStorage and re-render ---
+function updateTasks() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    renderTasks();
 }
 
-// Delete task
-function deleteTask(btn){
-    const li = btn.parentElement.parentElement;
-    const text = li.childNodes[0].textContent.trim();
-
-    tasks = tasks.filter(task => task.text !== text);
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    li.remove();
-    updateProgress();
-}
-
-// Update task completed status in localStorage
-function updateTaskStatus(text, completed) {
-    const task = tasks.find(t => t.text === text);
-    if(task) task.completed = completed;
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-}
-
-// Update task text in localStorage
-function updateTaskText(oldText, newText) {
-    const task = tasks.find(t => t.text === oldText);
-    if(task) task.text = newText;
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-}
-
-// Update progress bar
+// --- Update progress bar ---
 function updateProgress() {
-    const total = tasks.length;
-    const completed = tasks.filter(t => t.completed).length;
-    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
-    progressBar.style.width = percent + '%';
+    const allTasks = document.querySelectorAll(".task-item");
+    const completedTasks = document.querySelectorAll(".task-item.completed");
+    const progress = allTasks.length === 0 ? 0 : (completedTasks.length / allTasks.length) * 100;
+    progressBar.style.width = progress + "%";
 }
+
+// --- Initial render ---
+renderTasks();
