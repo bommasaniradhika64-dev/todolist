@@ -14,6 +14,11 @@ const defaultTasks = [
 // --- Load tasks from localStorage or use defaults ---
 let tasks = JSON.parse(localStorage.getItem("tasks"));
 if (!tasks || tasks.length === 0) {
+    const defaultTasks = [
+        "Read book",
+        "Complete coding practice",
+        "Google meet"
+    ];
     tasks = defaultTasks;
     localStorage.setItem("tasks", JSON.stringify(tasks));
 }
