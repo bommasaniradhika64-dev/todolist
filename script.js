@@ -6,9 +6,9 @@ const progressBar = document.getElementById("progressBar");
 
 // --- Default tasks for first-time visitors ---
 const defaultTasks = [
-    "Buy groceries",
-    "Complete homework",
-    "Call a friend"
+    "Read book",
+    "Complete coding practice",
+    "Google meet"
 ];
 
 // --- Load tasks from localStorage or use defaults ---
